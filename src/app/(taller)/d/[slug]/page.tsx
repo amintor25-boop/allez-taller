@@ -6,6 +6,7 @@ import { abrirDemo } from '@/lib/demos'
 import { urlPublicaOrden } from '@/lib/base-url'
 import { mensajeWhatsApp } from '@/lib/mensaje'
 import { qrSvg } from '@/lib/qr'
+import { telefonoTaller } from '@/lib/entorno'
 
 export const dynamic = 'force-dynamic'
 
@@ -80,7 +81,7 @@ async function armarModal(
       placa: orden.placa,
       items: mostrados.map((i) => ({ descripcion: i.descripcion, precio: i.precio })),
       url,
-      telefono: process.env.NEXT_PUBLIC_TELEFONO_TALLER ?? '+593979279337',
+      telefono: telefonoTaller(),
       fechaIso: enviadoEn,
     }),
   }

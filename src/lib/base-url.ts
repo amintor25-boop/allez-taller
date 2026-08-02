@@ -1,4 +1,5 @@
 import { headers } from 'next/headers'
+import { baseFijada } from './entorno'
 
 /**
  * La dirección a la que apunta el QR.
@@ -13,7 +14,7 @@ import { headers } from 'next/headers'
  * cliente delante.
  */
 export async function baseUrl(): Promise<string> {
-  const fijada = process.env.NEXT_PUBLIC_BASE_URL?.trim()
+  const fijada = baseFijada()
   if (fijada) return fijada.replace(/\/+$/, '')
 
   const h = await headers()

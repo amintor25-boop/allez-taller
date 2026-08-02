@@ -103,27 +103,17 @@ execSync('npx --no-install netlify deploy --prod --build', { stdio: 'inherit', e
 
 // ── 5. Comprobar ────────────────────────────────────────────────────────────
 paso(5, 'Comprobando el sitio publicado')
-const base = `https://${NOMBRE}.netlify.app`
-const rutas = ['/salud', '/d/san-rafael', '/admin', '/d/san-rafael/facturacion', '/d/san-rafael/reportes']
-
-let fallos = 0
-for (const r of rutas) {
-  const t = Date.now()
-  try {
-    const res = await fetch(base + r, { redirect: 'follow' })
-    const cuerpo = r === '/salud' ? await res.text() : ''
-    const seg = ((Date.now() - t) / 1000).toFixed(2)
-    const bien = res.status === 200 && (r !== '/salud' || cuerpo.includes('Conectado'))
-    if (!bien) fallos++
-    console.log(`   ${bien ? '✓' : '✗'} ${r.padEnd(30)} ${res.status}  ${seg}s`)
-  } catch (e) {
-    fallos++
-    console.log(`   ✗ ${r.padEnd(30)} ${e.message}`)
-  }
+const { spawnSync } = await import('node:child_process')
+const v = spawnSync('node', ['scripts/verificar-despliegue.mjs', `https://${NOMBRE}.netlify.app`], {
+  stdio: 'inherit',
+})
+if (v.status !== 0) {
+  console.error('\n\x1b[31m  El despliegue no pasó la comprobación. No repartas el enlace.\x1b[0m')
+  process.exit(1)
 }
 
-console.log(`\n${fallos === 0 ? '\x1b[32mListo.\x1b[0m' : '\x1b[31mHay ' + fallos + ' fallos.\x1b[0m'}  ${base}/d/san-rafael`)
-console.log(`Consola de enlaces: ${base}/admin`)
+console.log(`\nListo.  https://${NOMBRE}.netlify.app/d/san-rafael`)
+console.log(`Consola de enlaces: https://${NOMBRE}.netlify.app/admin`)
 console.log('\nÚltimo paso, y este solo lo puede hacer un teléfono de verdad:')
 console.log('abre el tablero desde un celular FUERA de tu wifi, manda un presupuesto,')
 console.log('escanea el QR y aprueba. Si la tarjeta viaja sola, está listo.')

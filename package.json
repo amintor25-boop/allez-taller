@@ -14,7 +14,9 @@
     "listo": "node scripts/listo.mjs",
     "demo:invariantes": "tsx --env-file-if-exists=.env.local scripts/invariantes.ts",
     "turso": "node scripts/con-turso.mjs",
-    "publicar:real": "node scripts/publicar.mjs"
+    "publicar:real": "node scripts/publicar.mjs",
+    "desplegar": "node scripts/desplegar.mjs",
+    "verificar": "node scripts/verificar-despliegue.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.15.4",

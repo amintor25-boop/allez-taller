@@ -2,6 +2,7 @@ import { ahora, ejecutar, fila, filas } from './db'
 import { slugificar, token } from './dominio'
 import { rucFicticio, sembrarDemo, type Demo } from './semilla'
 import { restaurarDemo } from './restauracion'
+import { telefonoTaller } from './entorno'
 
 export type { Demo }
 
@@ -77,7 +78,7 @@ async function crearFila(nombreTaller: string, slugPedido?: string): Promise<Dem
   await ejecutar(
     `INSERT INTO demos (id, slug, taller_nombre, telefono, ciudad, ruc, creado_en, sembrado_en, ultima_actividad, tour_visto, secuencial)
      VALUES (?, ?, ?, ?, 'Quito', ?, ?, '', ?, 0, 1247)`,
-    [id, slug, nombre, process.env.NEXT_PUBLIC_TELEFONO_TALLER ?? null, rucFicticio(slug), t, t],
+    [id, slug, nombre, telefonoTaller(), rucFicticio(slug), t, t],
   )
 
   return (await buscarDemo(slug))!

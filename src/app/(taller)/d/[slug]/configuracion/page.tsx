@@ -3,6 +3,7 @@ import { abrirDemo } from '@/lib/demos'
 import { centavos, dinero, iniciales, telefonoLegible } from '@/lib/dominio'
 import { CATALOGO_SERVICIOS } from '@/lib/datos-semilla'
 import { ReiniciarDemo } from '@/components/taller/ReiniciarDemo'
+import { telefonoTaller } from '@/lib/entorno'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,7 +29,7 @@ export default async function PaginaConfiguracion({
     [demo.id],
   )
 
-  const telefono = demo.telefono ?? process.env.NEXT_PUBLIC_TELEFONO_TALLER ?? '+593979279337'
+  const telefono = demo.telefono ?? telefonoTaller()
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">

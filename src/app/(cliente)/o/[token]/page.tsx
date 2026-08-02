@@ -1,12 +1,13 @@
 import { ordenPorToken } from '@/lib/consultas'
 import { telefonoMarcable } from '@/lib/dominio'
 import { VistaCliente, type DatosVista, type ItemVista } from './vista'
+import { telefonoTaller } from '@/lib/entorno'
 
 // El estado cambia desde el taller mientras el cliente tiene la página abierta,
 // así que nunca se sirve una versión guardada.
 export const dynamic = 'force-dynamic'
 
-const TELEFONO = process.env.NEXT_PUBLIC_TELEFONO_TALLER ?? '+593979279337'
+const TELEFONO = telefonoTaller()
 
 export default async function PaginaOrdenPublica({
   params,

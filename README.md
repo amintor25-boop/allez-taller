@@ -361,7 +361,49 @@ línea se pone ámbar y lo dice con todas las letras. En Netlify no se pinta.
 Al publicar, las credenciales salen de las variables del sitio, no de ningún
 archivo.
 
+## Publicar es empujar, esperar y COMPROBAR
+
+```bash
+npm run desplegar "lo que cambió"
+```
+
+Hace las tres cosas: empuja, espera a que Netlify compile y **verifica que lo
+publicado responde**. Si algo falla, lo dice a gritos y sale con error.
+
+```bash
+npm run verificar     # solo la comprobación, contra el sitio en vivo
+```
+
+Comprueba `/salud`, el tablero, recepción, facturación, inventario, reportes,
+`/admin` y **la página del cliente con un token de verdad** sacado del propio
+tablero. Esa última importa: es el centro de la venta, y comprobarla con un
+enlace inventado no probaría nada.
+
+Existe porque un guardia de entorno mal escrito dejó `/d/san-rafael` devolviendo
+500 y solo se descubrió porque a alguien se le ocurrió mirar. Si eso pasa un
+martes por la noche, mientras el socio del prospecto abre su enlace, no se entera
+nadie y la venta se pierde sin saber por qué.
+
 ## Trampas conocidas
+
+**Una variable de entorno puede existir al COMPILAR y no al EJECUTAR. No son el
+mismo entorno.** `NETLIFY` está puesta mientras Netlify compila, pero no dentro
+de la función que atiende las peticiones. Un guardia que la miraba para decidir
+"esto es producción, déjalo pasar" se disparaba en cada petición y tumbó el sitio
+entero: `/d/san-rafael` en 500. El marcador que sí existe en ejecución es el de
+Lambda, que es donde corren las funciones.
+
+Al revés pasa lo mismo y es más silencioso: **`NEXT_PUBLIC_*` se incrusta en el
+paquete al compilar**. Se comprobó buscando el número de teléfono literal dentro
+de `.next/server`: ahí estaba. O sea que cambiarlo en el panel de Netlify no hace
+nada hasta el siguiente despliegue — y ese número es el que suena cuando el socio
+del prospecto toca "Llamar al taller". Por eso las dos variables que el servidor
+necesita en ejecución viven en [entorno.ts](src/lib/entorno.ts) SIN ese prefijo:
+`TELEFONO_TALLER` y `BASE_URL`.
+
+La regla, para la próxima: antes de mirar una variable de entorno, preguntarse en
+cuál de los dos entornos se va a leer. Y si la respuesta decide si algo arranca o
+no, comprobarlo en el sitio publicado, no en la laptop.
 
 **Borrar `data/allez.db` con el servidor vivo** lo deja leyendo el inodo borrado:
 sigue sirviendo datos viejos que ya no están en el archivo. Hay que reiniciarlo

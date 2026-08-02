@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { telefonoTaller } from '@/lib/entorno'
 import { NoExiste } from '@/components/taller/NoExiste'
 import { Placa } from '@/components/Placa'
 import { AgregarHallazgo } from '@/components/taller/AgregarHallazgo'
@@ -62,7 +63,7 @@ export default async function PaginaOrden({
         numero: orden.factura.numero,
         total: orden.factura.total,
         url,
-        telefono: process.env.NEXT_PUBLIC_TELEFONO_TALLER ?? '+593979279337',
+        telefono: telefonoTaller(),
         fechaIso: orden.factura.emitida_en,
       }),
     }
