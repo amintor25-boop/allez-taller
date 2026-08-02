@@ -29,8 +29,11 @@ const esRemoto = /^(libsql|https|http|wss|ws):/.test(URL_BD)
  */
 function guardiaDeProduccion() {
   if (!esRemoto) return
-  if (process.env.NETLIFY) return
   if (process.env.PERMITIR_PRODUCCION === '1') return
+  // `NETLIFY` existe al COMPILAR pero no en el entorno de la función, así que
+  // mirarlo solo a él tumbó la producción entera con un 500. El marcador que sí
+  // está en ejecución es el de Lambda, que es donde corren.
+  if (process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT) return
 
   throw new Error(
     'Base REMOTA (Turso) desde esta máquina, y eso escribe en la demo publicada.\n' +
@@ -76,7 +79,9 @@ async function crear(): Promise<Client> {
 export function baseEnUso(): { remota: boolean; etiqueta: string; enNetlify: boolean } {
   return {
     remota: esRemoto,
-    enNetlify: Boolean(process.env.NETLIFY),
+    enNetlify: Boolean(
+      process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT,
+    ),
     etiqueta: esRemoto ? URL_BD.replace(/\/\/[^.]+/, '//****') : 'archivo local · data/allez.db',
   }
 }
