@@ -80,13 +80,15 @@ export type Cita = {
   placa: string
   cliente: string
   servicio: string
+  /** Cuánto dura el trabajo. Es lo que da altura a la cita en el riel. */
+  horas: number
   mecanico: string | null
   siglas: string | null
 }
 
 export async function agendaDe(demoId: string): Promise<Cita[]> {
   const r = await filas<any>(
-    `SELECT c.id, c.dia, c.hora, c.placa, c.cliente, c.servicio, m.nombre AS mecanico,
+    `SELECT c.id, c.dia, c.hora, c.placa, c.cliente, c.servicio, c.horas, m.nombre AS mecanico,
             v.id AS vehiculo_id
        FROM citas c
   LEFT JOIN mecanicos m ON m.id = c.mecanico_id
@@ -97,6 +99,7 @@ export async function agendaDe(demoId: string): Promise<Cita[]> {
   return r.map((c) => ({
     ...c,
     vehiculoId: c.vehiculo_id ?? null,
+    horas: Number(c.horas) || 1,
     siglas: c.mecanico ? iniciales(c.mecanico) : null,
   }))
 }

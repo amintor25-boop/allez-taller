@@ -154,6 +154,7 @@ export const ESQUEMA: string[] = [
      placa       TEXT NOT NULL,
      cliente     TEXT NOT NULL,
      servicio    TEXT NOT NULL,
+     horas       REAL NOT NULL DEFAULT 1,
      mecanico_id TEXT
    )`,
   `CREATE INDEX IF NOT EXISTS ix_citas_demo ON citas (demo_id, dia)`,
@@ -191,4 +192,5 @@ export const MIGRACIONES: string[] = [
   `ALTER TABLE facturas ADD COLUMN estado TEXT NOT NULL DEFAULT 'autorizada'`,
   `ALTER TABLE items ADD COLUMN horas REAL NOT NULL DEFAULT 0`,
   `ALTER TABLE inventario ADD COLUMN sembrada INTEGER NOT NULL DEFAULT 1`,
+  `ALTER TABLE citas ADD COLUMN horas REAL NOT NULL DEFAULT 1`,
 ]

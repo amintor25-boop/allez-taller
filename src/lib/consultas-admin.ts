@@ -7,6 +7,21 @@ import { antiguedad, fechaHora } from './dominio'
 // Todo sale de la tabla `eventos`, que se escribe desde las rutas de la API. No
 // hay analítica ni cookies: solo lo que pasó dentro del demo.
 
+/**
+ * Los cinco pasos del recorrido de un prospecto, en orden.
+ *
+ * Contesta la pregunta de venta: "¿hasta dónde llegó éste?". No es lo mismo uno
+ * que abrió y se quedó mirando el tablero que uno que mandó un presupuesto y
+ * esperó la respuesta de su cliente — al segundo se le llama con otra cosa.
+ */
+export const PASOS = [
+  { clave: 'abrio', etiqueta: 'Abrió', tipos: ['demo_abierto'] },
+  { clave: 'movio', etiqueta: 'Movió una tarjeta', tipos: ['orden_movida', 'orden_creada'] },
+  { clave: 'presupuesto', etiqueta: 'Envió un presupuesto', tipos: ['presupuesto_enviado'] },
+  { clave: 'respondio', etiqueta: 'Su cliente respondió', tipos: ['aprobado', 'rechazado'] },
+  { clave: 'facturo', etiqueta: 'Facturó', tipos: ['facturado'] },
+] as const
+
 export type ResumenDemo = {
   slug: string
   nombre: string
@@ -22,6 +37,10 @@ export type ResumenDemo = {
   sinAbrir: boolean
   /** Entró, miró y no tocó nada. Eso también es información de venta. */
   soloMiro: boolean
+  /** Cuáles de los cinco pasos alcanzó, en orden. */
+  recorrido: boolean[]
+  /** El más lejos al que llegó, para decirlo con palabras. */
+  llegoHasta: string | null
 }
 
 export type UsoRegistrado = {
@@ -82,6 +101,16 @@ export async function resumenDemos(): Promise<ResumenDemo[]> {
       WHERE e.id IN (SELECT MAX(id) FROM eventos WHERE ${DEL_PROSPECTO('tipo')} GROUP BY demo_id)`,
   )
 
+  // Qué tipos de evento tiene cada demo: con eso se arma el recorrido.
+  const tipos = await filas<{ slug: string; tipo: TipoEvento }>(
+    `SELECT DISTINCT d.slug, e.tipo FROM eventos e JOIN demos d ON d.id = e.demo_id`,
+  )
+  const tiposPorSlug = new Map<string, Set<string>>()
+  for (const t of tipos) {
+    if (!tiposPorSlug.has(t.slug)) tiposPorSlug.set(t.slug, new Set())
+    tiposPorSlug.get(t.slug)!.add(t.tipo)
+  }
+
   const porSlug = new Map((conteos as any[]).map((c) => [c.slug, c]))
   const ultimoPorSlug = new Map(ultimos.map((u) => [u.slug, u]))
   const ahora = Date.now()
@@ -103,8 +132,20 @@ export async function resumenDemos(): Promise<ResumenDemo[]> {
       ultimoDetalle: u ? `${ETIQUETA_EVENTO[u.tipo]}${u.detalle ? ` · ${u.detalle}` : ''}` : null,
       sinAbrir: Number(c?.aperturas ?? 0) === 0,
       soloMiro: Number(c?.aperturas ?? 0) > 0 && Number(c?.propios ?? 0) === 0,
+      recorrido: recorridoDe(tiposPorSlug.get(d.slug)),
+      llegoHasta: masLejos(tiposPorSlug.get(d.slug)),
     }
   })
+}
+
+function recorridoDe(vistos: Set<string> | undefined): boolean[] {
+  return PASOS.map((p) => Boolean(vistos && p.tipos.some((t) => vistos.has(t))))
+}
+
+function masLejos(vistos: Set<string> | undefined): string | null {
+  const hechos = recorridoDe(vistos)
+  for (let i = hechos.length - 1; i >= 0; i--) if (hechos[i]) return PASOS[i].etiqueta
+  return null
 }
 
 export async function registroDeUso(limite = 80): Promise<UsoRegistrado[]> {

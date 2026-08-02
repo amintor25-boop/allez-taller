@@ -366,9 +366,9 @@ async function sembrarDeVerdad(demo: Pick<Demo, 'id' | 'taller_nombre'> & { slug
 
   CITAS.forEach((c, i) => {
     sentencias.push({
-      sql: `INSERT INTO citas (id, demo_id, dia, hora, placa, cliente, servicio, mecanico_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [`${demoId}-ct-${i}`, demoId, c.dia, c.hora, c.placa, c.cliente, c.servicio, idMecanico(demoId, c.mecanico)],
+      sql: `INSERT INTO citas (id, demo_id, dia, hora, placa, cliente, servicio, horas, mecanico_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [`${demoId}-ct-${i}`, demoId, c.dia, c.hora, c.placa, c.cliente, c.servicio, c.horas, idMecanico(demoId, c.mecanico)],
     })
   })
 

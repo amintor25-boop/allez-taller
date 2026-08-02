@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { baseUrl } from '@/lib/base-url'
 import {
   ETIQUETA_EVENTO,
+  PASOS,
   registroDeUso,
   resumenDemos,
   type ResumenDemo,
@@ -181,6 +182,53 @@ export default async function PaginaAdmin({
   )
 }
 
+/**
+ * Hasta dónde llegó el prospecto, en cinco tramos.
+ *
+ * Es lo único de /admin que no ve nadie más que quien reparte los enlaces, y
+ * contesta a quién llamar y con qué: al que abrió y se quedó en el tablero se le
+ * llama distinto que al que mandó un presupuesto y su cliente ya respondió.
+ *
+ * Se llena HASTA donde llegó, no marcando uno por uno los pasos que hizo. Alguien
+ * puede mandar un presupuesto sin haber arrastrado nunca una tarjeta, y pintar
+ * ese hueco en medio parecía un fallo de dibujo en vez de un dato. La precisión
+ * la lleva la etiqueta de al lado, que dice el paso exacto.
+ *
+ * El tramo vacío va en `pista` (#5A6B95): sobre la superficie #111C38 da 3,18:1,
+ * el mínimo de un elemento gráfico. Con `borde` serían 1,30 y con `borde-fuerte`
+ * 1,73 — a seis píxeles de alto se leería "tres barras" en vez de "tres de
+ * cinco", y ahí la idea muere. Los cumplidos van en el azul de acción y el
+ * último alcanzado en cian, para que el ojo caiga en dónde se quedó.
+ */
+function Recorrido({ pasos, hasta }: { pasos: boolean[]; hasta: string | null }) {
+  const ultimo = pasos.lastIndexOf(true)
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+      <span className="flex gap-1" role="img" aria-label={`Llegó hasta: ${hasta ?? 'no lo ha abierto'}`}>
+        {PASOS.map((p, i) => (
+          <span
+            key={p.clave}
+            title={p.etiqueta}
+            className={`block h-1.5 w-7 rounded-full ${
+              i === ultimo ? 'bg-acento' : i < ultimo ? 'bg-accion' : 'bg-pista'
+            }`}
+          />
+        ))}
+      </span>
+      <span className="text-meta text-tinta-3">
+        {hasta ? (
+          <>
+            llegó a <span className="text-tinta-2">{hasta.toLowerCase()}</span>
+          </>
+        ) : (
+          'no lo ha abierto'
+        )}
+      </span>
+    </div>
+  )
+}
+
 function Fila({ demo, base }: { demo: ResumenDemo; base: string }) {
   const url = `${base}/d/${demo.slug}`
 
@@ -212,6 +260,8 @@ function Fila({ demo, base }: { demo: ResumenDemo; base: string }) {
             )}
           </div>
           <p className="cifras mt-1 break-all text-meta text-tinta-3">{url}</p>
+          {!demo.esPrincipal && <Recorrido pasos={demo.recorrido} hasta={demo.llegoHasta} />}
+
           {(demo.ultimoDetalle || !demo.esPrincipal) && (
             <p className="mt-1.5 truncate text-meta text-tinta-2">
               {demo.ultimoDetalle ??

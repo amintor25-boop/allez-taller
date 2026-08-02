@@ -16,6 +16,11 @@ const config: Config = {
         elevada: '#162243',
         borde: '#24314F',
         'borde-fuerte': '#33436B',
+        // Pista de un elemento gráfico que hay que poder CONTAR, no solo
+        // intuir. `borde-fuerte` da 1,73:1 sobre la superficie y a cuatro
+        // píxeles de alto desaparece: se leería "tres barras" en vez de "tres
+        // de cinco". Este llega a 3,18:1, el mínimo de un elemento no textual.
+        pista: '#5A6B95',
         tinta: '#F2F5FC',
         'tinta-2': '#A8B6D4',
         'tinta-3': '#8494B8',

@@ -2,6 +2,7 @@ import { filas } from '@/lib/db'
 import { abrirDemo } from '@/lib/demos'
 import { centavos, dinero, iniciales, telefonoLegible } from '@/lib/dominio'
 import { CATALOGO_SERVICIOS } from '@/lib/datos-semilla'
+import { numeroFactura } from '@/lib/sri'
 import { ReiniciarDemo } from '@/components/taller/ReiniciarDemo'
 import { telefonoTaller } from '@/lib/entorno'
 
@@ -37,6 +38,61 @@ export default async function PaginaConfiguracion({
       <p className="mt-1 text-meta text-tinta-2">
         De aquí salen los datos de la factura y de la página que ve el cliente
       </p>
+
+      {/* ── La cabecera de la factura, de verdad ───────────────────────────
+          Esta pantalla PROMETE que de aquí salen los datos de la factura y
+          nunca la enseñaba: cuarenta filas de etiqueta y valor. Aquí está el
+          bloque real, con los mismos datos y el mismo aspecto que en el
+          comprobante, para que se vea a dónde va cada campo. */}
+      <figure className="mt-5">
+        <div className="overflow-hidden rounded-xl border border-borde bg-white text-[#14181F]">
+          <div className="grid gap-4 p-5 sm:grid-cols-[1fr_1.15fr]">
+            <div className="rounded-md border border-[#C9CDD4] p-4">
+              <p className="font-titulo text-[18px] leading-6">{demo.taller_nombre}</p>
+              <dl className="mt-3 space-y-1 text-[12px] leading-[17px]">
+                <div className="flex gap-2">
+                  <dt className="shrink-0 text-[#5C6472]">R.U.C.:</dt>
+                  <dd className="cifras">{demo.ruc}</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="shrink-0 text-[#5C6472]">Dirección matriz:</dt>
+                  <dd>{demo.ciudad} · Ecuador</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="shrink-0 text-[#5C6472]">Obligado a llevar contabilidad:</dt>
+                  <dd>NO</dd>
+                </div>
+              </dl>
+            </div>
+            <div className="rounded-md border border-[#C9CDD4] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5C6472]">
+                Factura No.
+              </p>
+              <p className="cifras font-titulo text-[19px] leading-7">
+                {numeroFactura(demo.secuencial + 1)}
+              </p>
+              <dl className="mt-3 space-y-1 text-[12px] leading-[17px]">
+                <div className="flex gap-2">
+                  <dt className="shrink-0 text-[#5C6472]">Ambiente:</dt>
+                  <dd>PRUEBAS</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="shrink-0 text-[#5C6472]">Emisión:</dt>
+                  <dd>NORMAL</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="shrink-0 text-[#5C6472]">Establecimiento:</dt>
+                  <dd className="cifras">001 · punto de emisión 001</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </div>
+        <figcaption className="mt-2 text-meta text-tinta-3">
+          Así sale la cabecera del próximo comprobante. El secuencial avanza solo con
+          cada factura emitida.
+        </figcaption>
+      </figure>
 
       <section className="mt-5 overflow-hidden rounded-xl border border-borde bg-superficie">
         <h2 className="border-b border-borde px-5 py-3 text-etiqueta font-semibold uppercase text-tinta-2">

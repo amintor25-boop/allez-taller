@@ -219,20 +219,20 @@ export const INVENTARIO = [
 
 // ─── Agenda de la semana (decorativa) ────────────────────────────────────────
 export const CITAS = [
-  { dia: 0, hora: '08:00', placa: 'PBH-0472', cliente: 'Gabriela Muñoz', servicio: 'Mantenimiento 40.000 km', mecanico: 0 },
-  { dia: 0, hora: '10:30', placa: 'PCX-5518', cliente: 'Ángel Cabascango', servicio: 'Cambio de aceite', mecanico: 2 },
-  { dia: 0, hora: '14:00', placa: 'PBK-4407', cliente: 'Nelson Chiluisa', servicio: 'Revisión de frenos', mecanico: 1 },
-  { dia: 1, hora: '08:30', placa: 'PDA-1163', cliente: 'Byron Tipán', servicio: 'Alineación y balanceo', mecanico: 1 },
-  { dia: 1, hora: '11:00', placa: 'PCE-6620', cliente: 'Martha Quinatoa', servicio: 'Correa de distribución', mecanico: 0 },
-  { dia: 1, hora: '15:30', placa: 'PBM-7741', cliente: 'Ximena Pazmiño', servicio: 'Primer mantenimiento', mecanico: 2 },
-  { dia: 2, hora: '08:00', placa: 'GSA-0912', cliente: 'Segundo Quishpe', servicio: 'Entrega de embrague', mecanico: 1 },
-  { dia: 2, hora: '10:00', placa: 'PAJ-3378', cliente: 'Diego Recalde', servicio: 'Revisión eléctrica', mecanico: 2 },
-  { dia: 2, hora: '16:00', placa: 'IBA-7730', cliente: 'Rocío Naranjo', servicio: 'Suspensión delantera', mecanico: 1 },
-  { dia: 3, hora: '09:00', placa: 'PCS-2260', cliente: 'Marco Tulcanaza', servicio: 'Escáner y prueba de ruta', mecanico: 0 },
-  { dia: 3, hora: '13:30', placa: 'TAA-5678', cliente: 'Patricio Salazar', servicio: 'Entrega de frenos', mecanico: 1 },
-  { dia: 4, hora: '08:30', placa: 'PAY-9034', cliente: 'Verónica Simbaña', servicio: 'Mantenimiento 55.000 km', mecanico: 2 },
-  { dia: 4, hora: '11:30', placa: 'PBX-1234', cliente: 'Luis Andrade', servicio: 'Prueba de ruta post ABC', mecanico: 0 },
-  { dia: 5, hora: '09:00', placa: 'PCA-3391', cliente: 'Mercedes Yépez', servicio: 'Entrega general', mecanico: 0 },
+  { dia: 0, hora: '08:00', placa: 'PBH-0472', cliente: 'Gabriela Muñoz', servicio: 'Mantenimiento 40.000 km', horas: 2, mecanico: 0 },
+  { dia: 0, hora: '10:30', placa: 'PCX-5518', cliente: 'Ángel Cabascango', servicio: 'Cambio de aceite', horas: 0.5, mecanico: 2 },
+  { dia: 0, hora: '14:00', placa: 'PBK-4407', cliente: 'Nelson Chiluisa', servicio: 'Revisión de frenos', horas: 1, mecanico: 1 },
+  { dia: 1, hora: '08:30', placa: 'PDA-1163', cliente: 'Byron Tipán', servicio: 'Alineación y balanceo', horas: 0.75, mecanico: 1 },
+  { dia: 1, hora: '11:00', placa: 'PCE-6620', cliente: 'Martha Quinatoa', servicio: 'Correa de distribución', horas: 4, mecanico: 0 },
+  { dia: 1, hora: '15:30', placa: 'PBM-7741', cliente: 'Ximena Pazmiño', servicio: 'Primer mantenimiento', horas: 1, mecanico: 2 },
+  { dia: 2, hora: '08:00', placa: 'GSA-0912', cliente: 'Segundo Quishpe', servicio: 'Entrega de embrague', horas: 1, mecanico: 1 },
+  { dia: 2, hora: '10:00', placa: 'PAJ-3378', cliente: 'Diego Recalde', servicio: 'Revisión eléctrica', horas: 1, mecanico: 2 },
+  { dia: 2, hora: '16:00', placa: 'IBA-7730', cliente: 'Rocío Naranjo', servicio: 'Suspensión delantera', horas: 1, mecanico: 1 },
+  { dia: 3, hora: '09:00', placa: 'PCS-2260', cliente: 'Marco Tulcanaza', servicio: 'Escáner y prueba de ruta', horas: 1, mecanico: 0 },
+  { dia: 3, hora: '13:30', placa: 'TAA-5678', cliente: 'Patricio Salazar', servicio: 'Entrega de frenos', horas: 1, mecanico: 1 },
+  { dia: 4, hora: '08:30', placa: 'PAY-9034', cliente: 'Verónica Simbaña', servicio: 'Mantenimiento 55.000 km', horas: 1, mecanico: 2 },
+  { dia: 4, hora: '11:30', placa: 'PBX-1234', cliente: 'Luis Andrade', servicio: 'Prueba de ruta post ABC', horas: 1, mecanico: 0 },
+  { dia: 5, hora: '09:00', placa: 'PCA-3391', cliente: 'Mercedes Yépez', servicio: 'Entrega general', horas: 1, mecanico: 0 },
 ]
 
 // ─── Reportes (decorativos, pero coherentes con lo anterior) ─────────────────
