@@ -365,15 +365,18 @@ export function generarHistorial(semilla: number): VisitaGenerada[] {
         dia = 1 + Math.floor(r() * diasHabiles)
       }
 
-      const vehiculo = VEHICULOS[Math.floor(r() * VEHICULOS.length)]
-
       const cuantos = r() < 0.55 ? 1 : r() < 0.88 ? 2 : 3
       const elegidos = new Set<number>()
       while (elegidos.size < cuantos) elegidos.add(Math.floor(r() * CATALOGO_SERVICIOS.length))
       const servicios = [...elegidos].map((i) => CATALOGO_SERVICIOS[i])
 
       const horas = servicios.reduce((a, sv) => a + sv.horas, 0)
-      const entro = new Date(Date.UTC(anio, mes, dia, 13 + Math.floor(r() * 4))) // 08–11 en Ecuador
+      // Con granularidad de hora, decenas de visitas caían en el mismo instante
+      // exacto: el orden entre ellas quedaba al azar y 646 órdenes con minuto
+      // repetido se ven inventadas. Los minutos las separan.
+      const entro = new Date(
+        Date.UTC(anio, mes, dia, 13 + Math.floor(r() * 4), Math.floor(r() * 60), Math.floor(r() * 60)),
+      ) // 08–11 en Ecuador
       const enTaller = Math.max(0, Math.round(horas / 4 + r() * 1.6))
       let salio = new Date(entro.getTime() + enTaller * 86_400_000 + (4 + r() * 5) * 3_600_000)
 
@@ -381,6 +384,19 @@ export function generarHistorial(semilla: number): VisitaGenerada[] {
       // vez: recortarlas todas contra "ahora" dejaba media docena de facturas
       // con el mismo minuto, y eso se ve inventado a la primera mirada.
       if (salio > hoy) salio = new Date(hoy.getTime() - (1 + r() * 9) * 3_600_000)
+
+      // EL CARRO SE ELIGE DESPUÉS DE SABER CUÁNDO SALIÓ, y solo entre los que no
+      // estaban adentro en esa fecha.
+      //
+      // Un vehículo que hoy sigue en el tablero no puede tener una factura
+      // posterior a su ingreso: sería un carro entregado y cobrado mientras está
+      // en la bahía. Salían cuatro casos así —PAJ-3378 en reparación con dos
+      // facturas de hoy— y es de las cosas que un dueño de taller ve enseguida.
+      const disponibles = VEHICULOS.filter((v) => {
+        const dentro = ORDENES.find((o) => o.placa === v.placa)
+        return !dentro || salio.getTime() < hoy.getTime() - dentro.haceMin * 60_000
+      })
+      const vehiculo = disponibles[Math.floor(r() * disponibles.length)]
 
       // El carro tenía menos kilómetros cuanto más atrás se mire.
       const diasAtras = Math.max(0, (hoy.getTime() - entro.getTime()) / 86_400_000)

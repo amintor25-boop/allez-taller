@@ -11,7 +11,8 @@
     "demo:enlaces": "tsx scripts/enlaces.ts",
     "dev:red": "node scripts/dev-red.mjs",
     "publicar": "node scripts/publicar.mjs",
-    "listo": "node scripts/listo.mjs"
+    "listo": "node scripts/listo.mjs",
+    "demo:invariantes": "tsx scripts/invariantes.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.15.4",

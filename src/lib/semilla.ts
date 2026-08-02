@@ -163,7 +163,34 @@ async function sembrarDeVerdad(demo: Pick<Demo, 'id' | 'taller_nombre'> & { slug
   // El número que se ve continúa el del historial; el identificador interno
   // sigue derivando de la constante de la semilla para que las direcciones no
   // cambien entre siembras.
-  const historialPrevio = generarHistorial(semillaDe(demo.slug ?? demo.taller_nombre)).length
+  const historial = generarHistorial(semillaDe(demo.slug ?? demo.taller_nombre))
+  historial.sort((a, b) => a.entro.localeCompare(b.entro))
+
+  // ── DOS NUMERACIONES, CADA UNA CON SU RELOJ ───────────────────────────────
+  //
+  // El NÚMERO DE ORDEN crece con la LLEGADA del carro, mezclando histórico y
+  // tablero: el más viejo del taller lleva el número más bajo. Antes se asignaba
+  // por el orden del array de la semilla y salía al revés —#0640 con cuatro días
+  // y #0629 con una hora—, que es justo lo contrario de como funciona un taller.
+  //
+  // El SECUENCIAL DE FACTURA crece con la EMISIÓN, que es la salida, no la
+  // entrada. Ordenar el histórico por entrada no basta porque las visitas duran
+  // distinto: una de tres días entra antes y sale después que una de dos horas.
+  // Con esa mezcla salían 223 saltos hacia atrás en 628 comprobantes, y el
+  // secuencial del SRI es estrictamente incremental. Un contador lo ve enseguida.
+  const llegadas = [
+    ...historial.map((v, i) => ({ clave: `h${i}`, cuando: v.entro })),
+    ...ORDENES.map((o) => ({ clave: `b${o.numero}`, cuando: haceMinutos(o.haceMin) })),
+  ].sort((a, b) => a.cuando.localeCompare(b.cuando))
+  const numeroDe = new Map(llegadas.map((x, i) => [x.clave, i + 1]))
+
+  const secuencialDe = new Map(
+    historial
+      .map((v, i) => ({ i, salio: v.salio }))
+      .sort((a, b) => a.salio.localeCompare(b.salio))
+      .map((x, n) => [x.i, 1000 + n + 1] as const),
+  )
+
   const porColumna: Record<string, number> = {}
 
   for (const o of ORDENES) {
@@ -181,7 +208,7 @@ async function sembrarDeVerdad(demo: Pick<Demo, 'id' | 'taller_nombre'> & { slug
                                  orden_columna, archivada, creada_en, actualizada_en)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
       args: [
-        ordenId, demoId, historialPrevio + ORDENES.indexOf(o) + 1,
+        ordenId, demoId, numeroDe.get(`b${o.numero}`)!,
         idVehiculo(demoId, o.placa), idCliente(demoId, o.placa),
         o.mecanico === null ? null : idMecanico(demoId, o.mecanico),
         o.estado, o.prioridad, vehiculo.km, o.combustible, o.observacion,
@@ -225,16 +252,10 @@ async function sembrarDeVerdad(demo: Pick<Demo, 'id' | 'taller_nombre'> & { slug
   // ── Doce meses de historia ────────────────────────────────────────────────
   // Archivadas (no salen en el tablero) y facturadas. Es lo que da cuerpo a
   // facturación y a reportes: sin volumen, esas pantallas parecen maqueta.
-  const historial = generarHistorial(semillaDe(demo.slug ?? demo.taller_nombre))
-  historial.sort((a, b) => a.entro.localeCompare(b.entro)) // de la más antigua a la más nueva
-
-  let numero = 0
-  let secuencial = 1000
-
-  for (const v of historial) {
-    numero++
-    secuencial++
-    const ordenId = `${demoId}-h-${numero}`
+  historial.forEach((v, indice) => {
+    const numero = numeroDe.get(`h${indice}`)!
+    const secuencial = secuencialDe.get(indice)!
+    const ordenId = `${demoId}-h-${indice + 1}`
     const { entro, salio } = v
     const vehiculo = VEHICULOS.find((x) => x.placa === v.placa)!
 
@@ -296,7 +317,7 @@ async function sembrarDeVerdad(demo: Pick<Demo, 'id' | 'taller_nombre'> & { slug
             VALUES (?, ?, ?, 'reparacion', 'listo', 'Entregado y facturado', ?)`,
       args: [`${ordenId}-mv`, demoId, ordenId, salio],
     })
-  }
+  })
 
   // ── Inventario y agenda ───────────────────────────────────────────────────
   // Cada repuesto llega con su historia de bodega: una compra al proveedor, un

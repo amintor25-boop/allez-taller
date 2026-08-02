@@ -174,7 +174,14 @@ export default async function PaginaFacturacion({
         <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-borde pt-4 lg:grid-cols-5">
           <Dato etiqueta="Subtotal" valor={dinero(r.subtotal)} />
           <Dato etiqueta="IVA 15 % cobrado" valor={dinero(r.iva)} acento />
-          <Dato etiqueta="Comprobantes" valor={String(r.emitidos)} />
+          {/* "Comprobantes 8" junto a una lista que decía "1–9 de 9" eran dos
+              números distintos en la misma pantalla. El total es lo que se lista;
+              los emitidos son los que suman al facturado. */}
+          <Dato
+            etiqueta="Comprobantes"
+            valor={String(r.emitidos + r.anulados)}
+            nota={r.anulados > 0 ? `${r.emitidos} emitidos · ${r.anulados} anulada${r.anulados === 1 ? '' : 's'}` : undefined}
+          />
           <Dato etiqueta="Ticket promedio" valor={dinero(r.ticketPromedio)} />
           <Dato etiqueta="Anuladas" valor={String(r.anulados)} apagado />
         </dl>
@@ -395,11 +402,13 @@ function Paso({ href, activo, children }: { href: string; activo: boolean; child
 function Dato({
   etiqueta,
   valor,
+  nota,
   acento,
   apagado,
 }: {
   etiqueta: string
   valor: string
+  nota?: string
   acento?: boolean
   apagado?: boolean
 }) {
@@ -413,6 +422,7 @@ function Dato({
       >
         {valor}
       </dd>
+      {nota && <dd className="cifras mt-0.5 text-meta text-tinta-3">{nota}</dd>}
     </div>
   )
 }
