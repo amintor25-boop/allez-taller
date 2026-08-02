@@ -54,7 +54,16 @@ export default async function PaginaComprobante({
           </svg>
           Orden #0{orden.numero}
         </Link>
-        <BotonImprimir />
+        {/* Una anulada se puede imprimir —hace falta para el archivo— pero el
+            botón dice lo que es. Sacarla y entregarla como válida ya no se puede
+            hacer sin querer: la banda roja va arriba del documento. */}
+        <BotonImprimir
+          etiqueta={
+            orden.factura.estado === 'anulada'
+              ? 'Imprimir comprobante anulado'
+              : 'Imprimir o guardar PDF'
+          }
+        />
       </div>
 
       <div className="mt-3 print:mt-0">
@@ -65,6 +74,7 @@ export default async function PaginaComprobante({
             ciudad: demo.ciudad,
             numero: orden.factura.numero,
             claveAcceso: orden.factura.clave_acceso,
+            estado: orden.factura.estado,
             subtotal: orden.factura.subtotal,
             iva: orden.factura.iva,
             total: orden.factura.total,
@@ -73,6 +83,9 @@ export default async function PaginaComprobante({
             cedula: orden.cedulaCliente,
             placa: orden.placa,
             vehiculo: `${orden.marca} ${orden.modelo} ${orden.anio}`,
+            kilometraje: orden.kilometraje,
+            mecanico: orden.mecanico,
+            numeroOrden: orden.numero,
             items: cobrables.map((i) => ({ descripcion: i.descripcion, precio: i.precio })),
           }}
         />

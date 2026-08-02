@@ -128,7 +128,15 @@ export type DetalleOrden = {
   fotoIngreso: string | null
   items: ItemOrden[]
   movimientos: Movimiento[]
-  factura: { numero: string; clave_acceso: string; subtotal: number; iva: number; total: number; emitida_en: string } | null
+  factura: {
+    numero: string
+    clave_acceso: string
+    estado: 'autorizada' | 'anulada' | 'nota_credito'
+    subtotal: number
+    iva: number
+    total: number
+    emitida_en: string
+  } | null
 }
 
 export async function ordenDe(demoId: string, ordenId: string): Promise<DetalleOrden | null> {
@@ -158,7 +166,7 @@ export async function ordenDe(demoId: string, ordenId: string): Promise<DetalleO
       args: [demoId, ordenId],
     },
     {
-      sql: `SELECT numero, clave_acceso, subtotal, iva, total, emitida_en FROM facturas
+      sql: `SELECT numero, clave_acceso, estado, subtotal, iva, total, emitida_en FROM facturas
              WHERE demo_id = ? AND orden_id = ?`,
       args: [demoId, ordenId],
     },

@@ -20,6 +20,21 @@ async function crear(): Promise<Client> {
     ? await import('@libsql/client/web')
     : await import('@libsql/client')
 
+  // AVISO: base remota desde una máquina que no es Netlify.
+  //
+  // `next dev` y `next start` leen .env.local, y ahí viven las credenciales de
+  // Turso desde que se publicó. O sea que levantar el servidor en la laptop
+  // TOCA LA DEMO DE PRODUCCIÓN: mover una tarjeta aquí la mueve para el
+  // prospecto que la esté mirando. Los scripts de terminal no lo hacen —tsx no
+  // carga .env.local— así que la trampa es solo esta.
+  if (esRemoto && !process.env.NETLIFY) {
+    console.warn(
+      '\n\x1b[33m  ⚠  Base REMOTA (Turso) desde esta máquina.\x1b[0m\n' +
+        '     Lo que toques aquí le pasa al demo publicado.\n' +
+        '     Para trabajar contra el archivo local, vacía TURSO_DATABASE_URL en .env.local.\n',
+    )
+  }
+
   const cliente = createClient({ url: URL_BD, authToken: TOKEN_BD })
 
   // El esquema se asegura una sola vez por instancia. Son CREATE IF NOT EXISTS,

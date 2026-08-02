@@ -129,14 +129,37 @@
     background: #fff !important;
     color: #14181f !important;
   }
+  /* Hoja A4 declarada. Sin `size`, el navegador elegía y la vista previa
+     enseñaba el comprobante flotando en el tercio superior de una hoja vacía —
+     que es lo que el prospecto va a ver aunque no imprima, porque va a tocar
+     Imprimir para mirar. */
   @page {
-    margin: 14mm;
+    size: A4;
+    margin: 16mm 14mm;
   }
+
   tr,
   article,
   section {
     break-inside: avoid;
   }
+
+  /* Una tabla larga SÍ se parte, y al partirse repite su cabecera en cada hoja.
+     Sin esto, en la hoja 2 del cierre no se sabe cuál columna es IVA y cuál es
+     total: es la diferencia entre una página web impresa y un reporte contable. */
+  .tabla-larga {
+    break-inside: auto;
+  }
+  .tabla-larga thead {
+    display: table-header-group;
+  }
+  .tabla-larga tfoot {
+    display: table-row-group;
+  }
+  .tabla-larga tr {
+    break-inside: avoid;
+  }
+
   a[href]::after {
     content: '';
   }

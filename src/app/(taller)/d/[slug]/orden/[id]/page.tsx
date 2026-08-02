@@ -196,6 +196,7 @@ export default async function PaginaOrden({
                   ciudad: demo.ciudad,
                   numero: orden.factura.numero,
                   claveAcceso: orden.factura.clave_acceso,
+                  estado: orden.factura.estado,
                   subtotal: orden.factura.subtotal,
                   iva: orden.factura.iva,
                   total: orden.factura.total,
@@ -203,7 +204,10 @@ export default async function PaginaOrden({
                   cliente: orden.cliente,
                   cedula: orden.cedulaCliente,
                   placa: orden.placa,
-                  vehiculo: `${orden.marca} ${orden.modelo} ${orden.anio}`,
+            vehiculo: `${orden.marca} ${orden.modelo} ${orden.anio}`,
+                  kilometraje: orden.kilometraje,
+                  mecanico: orden.mecanico,
+                  numeroOrden: orden.numero,
                   items: cobrables.map((i) => ({ descripcion: i.descripcion, precio: i.precio })),
                 }}
               />

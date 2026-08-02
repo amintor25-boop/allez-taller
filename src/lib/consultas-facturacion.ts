@@ -1,4 +1,5 @@
 import { filas, loteLectura } from './db'
+import { numeroFactura } from './sri'
 
 // Facturación: rangos, filtros, búsqueda, orden y paginación.
 //
@@ -353,9 +354,44 @@ export async function cierreMensual(demoId: string, mes?: string) {
     [demoId, clave],
   )
 
+  // ── Rango de secuenciales y saltos ────────────────────────────────────────
+  //
+  // Es lo primero que revisa un contador de un cierre, porque un secuencial que
+  // falta es una sanción del SRI. Que el sistema lo declare solo le ahorra la
+  // revisión — y si algún día faltara de verdad, lo dice en vez de esconderlo.
+  const secuenciales = todas
+    .map((f: any) => Number(String(f.numero).split('-')[2]))
+    .filter((n: number) => Number.isFinite(n))
+    .sort((a: number, b: number) => a - b)
+
+  const faltantes: number[] = []
+  for (let i = 1; i < secuenciales.length; i++) {
+    for (let n = secuenciales[i - 1] + 1; n < secuenciales[i]; n++) faltantes.push(n)
+  }
+
+  // ── Cuadre ────────────────────────────────────────────────────────────────
+  //
+  // El resumen excluía las anuladas en silencio mientras la tabla las enseñaba
+  // tachadas: los dos bloques no cuadraban a la vista, que es exactamente lo que
+  // un contador señala con el dedo. Aquí la resta va escrita.
+  const cuenta = (e: string) => todas.filter((f: any) => f.estado === e).length
+  const suma = (e: string) =>
+    todas.filter((f: any) => f.estado === e).reduce((s: number, f: any) => s + Number(f.total), 0)
+
   return {
     mes: clave,
     etiqueta: etiquetaMes(clave),
+    secuencialDesde: secuenciales.length ? numeroFactura(secuenciales[0]) : null,
+    secuencialHasta: secuenciales.length ? numeroFactura(secuenciales[secuenciales.length - 1]) : null,
+    faltantes: faltantes.map((n) => numeroFactura(n)),
+    cuadre: {
+      autorizadas: cuenta('autorizada'),
+      totalAutorizadas: suma('autorizada'),
+      anuladas: cuenta('anulada'),
+      totalAnuladas: suma('anulada'),
+      notas: cuenta('nota_credito'),
+      totalNotas: suma('nota_credito'),
+    },
     subtotal: primera.subtotal,
     iva: primera.iva,
     total: primera.total,

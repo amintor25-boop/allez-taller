@@ -58,11 +58,71 @@ export default async function PaginaCierre({
 
           {/* ── Resumen ───────────────────────────────────────────────── */}
           <div className="grid grid-cols-2 gap-x-8 gap-y-5 border-b border-[#E5E7EB] py-6 sm:grid-cols-4">
-            <Resumen etiqueta="Comprobantes" valor={String(c.emitidos)} />
+            <Resumen
+              etiqueta="Comprobantes"
+              valor={String(c.comprobantes.length)}
+              nota={
+                c.cuadre.anuladas > 0
+                  ? `${c.emitidos} válidos · ${c.cuadre.anuladas} anulada${c.cuadre.anuladas === 1 ? '' : 's'}`
+                  : undefined
+              }
+            />
             <Resumen etiqueta="Subtotal" valor={dinero(c.subtotal)} />
             <Resumen etiqueta="IVA 15 % cobrado" valor={dinero(c.iva)} />
             <Resumen etiqueta="Total facturado" valor={dinero(c.total)} fuerte />
           </div>
+
+          {/* ── Rango de secuenciales ──────────────────────────────────────
+              Lo primero que revisa un contador: un número que falta es una
+              sanción. Que el sistema lo declare le ahorra la revisión. */}
+          {c.secuencialDesde && (
+            <p className="cifras border-b border-[#E5E7EB] py-4 text-[13px] text-[#14181F]">
+              Del <span className="font-semibold">{c.secuencialDesde}</span> al{' '}
+              <span className="font-semibold">{c.secuencialHasta}</span> ·{' '}
+              {c.comprobantes.length} comprobantes ·{' '}
+              {c.faltantes.length === 0 ? (
+                <span className="text-[#15803D]">sin saltos</span>
+              ) : (
+                <span className="text-[#B91C1C]">
+                  faltan {c.faltantes.length}: {c.faltantes.slice(0, 6).join(', ')}
+                  {c.faltantes.length > 6 ? '…' : ''}
+                </span>
+              )}
+            </p>
+          )}
+
+          {/* ── Cuadre ─────────────────────────────────────────────────────
+              El resumen de arriba excluye las anuladas y la tabla de abajo las
+              enseña tachadas. Sin esta resta escrita, los dos bloques no cuadran
+              a la vista — y eso es lo que un contador señala con el dedo. */}
+          <dl className="border-b border-[#E5E7EB] py-5 text-[13px]">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#5C6472]">
+              Cuadre del mes
+            </p>
+            <Cuadre
+              etiqueta={`Autorizadas (${c.cuadre.autorizadas})`}
+              valor={dinero(c.cuadre.totalAutorizadas)}
+            />
+            {/* Las anuladas NO se restan: se excluyen. Ponerles un menos delante
+                dejaba la columna sin cuadrar —10.341 − 465 − 1.780 no da 8.561— y
+                una resta que no da es lo primero que un contador señala. Las
+                notas de crédito sí suman, en negativo, porque revierten venta. */}
+            <Cuadre
+              etiqueta={`Anuladas (${c.cuadre.anuladas})`}
+              valor={dinero(c.cuadre.totalAnuladas)}
+              nota="no suman"
+              tenue
+            />
+            <Cuadre
+              etiqueta={`Notas de crédito (${c.cuadre.notas})`}
+              valor={dinero(c.cuadre.totalNotas)}
+              tenue
+            />
+            <div className="mt-2 flex justify-between border-t border-[#C9CDD4] pt-2 font-semibold">
+              <dt>Neto facturado</dt>
+              <dd className="cifras">{dinero(c.total)}</dd>
+            </div>
+          </dl>
 
           {/* ── Detalle ───────────────────────────────────────────────────
               La tabla se desplaza DENTRO de su propia caja. En 375 px mide 616 px
@@ -70,7 +130,7 @@ export default async function PaginaCierre({
               IVA y Total quedaban recortadas y no había forma de alcanzarlas.
               Al imprimir no hay desplazamiento que valga, así que ahí se suelta. */}
           <div className="mt-6 overflow-x-auto print:overflow-visible">
-          <table className="w-full min-w-[560px] text-[12.5px] print:min-w-0">
+          <table className="tabla-larga w-full min-w-[560px] text-[12.5px] print:min-w-0">
             <thead>
               <tr className="border-b border-[#E5E7EB] text-[10px] font-semibold uppercase tracking-[0.08em] text-[#5C6472]">
                 <th className="pb-2 text-left font-semibold">Fecha</th>
@@ -127,6 +187,21 @@ export default async function PaginaCierre({
             Emitido el {fechaLarga(new Date().toISOString())}. Los precios se cotizan con IVA
             incluido; el subtotal resulta de dividir el total para 1,15 y el IVA es la diferencia.
           </p>
+
+          {/* ── Firmas ─────────────────────────────────────────────────────
+              Solo al imprimir. Es el papel que el dueño le entrega al contador
+              en la mano cada mes: sin esas dos rayas es un PDF, con ellas es un
+              documento que se firma y se archiva. En pantalla no pinta nada. */}
+          <div className="hidden print:mt-16 print:grid print:grid-cols-2 print:gap-16">
+            <div>
+              <div className="border-t border-[#14181F]" />
+              <p className="mt-1 text-[11px] text-[#5C6472]">Elaborado por</p>
+            </div>
+            <div>
+              <div className="border-t border-[#14181F]" />
+              <p className="mt-1 text-[11px] text-[#5C6472]">Recibido por</p>
+            </div>
+          </div>
         </div>
 
         <p className="border-t border-[#E5E7EB] bg-[#F7F8FA] px-6 py-3 text-center text-[12px] text-[#5C6472] sm:px-9">
@@ -137,13 +212,37 @@ export default async function PaginaCierre({
   )
 }
 
+function Cuadre({
+  etiqueta,
+  valor,
+  nota,
+  tenue,
+}: {
+  etiqueta: string
+  valor: string
+  nota?: string
+  tenue?: boolean
+}) {
+  return (
+    <div className={`flex items-baseline justify-between py-0.5 ${tenue ? 'text-[#5C6472]' : ''}`}>
+      <dt>
+        {etiqueta}
+        {nota && <span className="ml-2 text-[11px] uppercase tracking-[0.06em]">{nota}</span>}
+      </dt>
+      <dd className="cifras">{valor}</dd>
+    </div>
+  )
+}
+
 function Resumen({
   etiqueta,
   valor,
+  nota,
   fuerte,
 }: {
   etiqueta: string
   valor: string
+  nota?: string
   fuerte?: boolean
 }) {
   return (
@@ -154,6 +253,7 @@ function Resumen({
       <p className={`cifras mt-1 font-titulo ${fuerte ? 'text-[28px] leading-9' : 'text-[19px] leading-7'}`}>
         {valor}
       </p>
+      {nota && <p className="cifras mt-0.5 text-[11px] text-[#5C6472]">{nota}</p>}
     </div>
   )
 }

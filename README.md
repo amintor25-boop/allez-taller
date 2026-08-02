@@ -282,7 +282,62 @@ Con el guion apagado sigue funcionando todo lo demás: leer el tablero, abrir
 cualquier orden, aprobar desde la página del cliente, registrar repuestos,
 ajustar existencias, generar enlaces en `/admin` y reiniciar el demo.
 
+## El comprobante tiene forma de RIDE
+
+El dueño de un taller ecuatoriano ve tres facturas del SRI al día y no las lee:
+reconoce su forma. Por eso [Comprobante.tsx](src/components/taller/Comprobante.tsx)
+tiene la anatomía del RIDE — las dos cajas de emisor y documento, el número de
+autorización, el ambiente, el bloque de totales con sus ceros, el recuadro de
+información adicional.
+
+**Todo lo que aparece es cierto y se sostiene.** El número de autorización ES la
+clave de acceso, el ambiente ES el dígito de esa clave, el tipo de comprobante ES
+el que se emitió. No hay ni un campo inventado para rellenar: un contador puede
+leer los 49 dígitos uno por uno y todo cuadra.
+
+Dos reglas que cuestan de ver y son las que delatan un documento fabricado:
+
+- **El detalle va SIN IVA** y la suma de la columna tiene que dar el *subtotal sin
+  impuestos*, no el total. Como aquí los precios se cotizan con el IVA dentro,
+  cada renglón se divide y la diferencia de redondeo se ajusta en el último —lo
+  mismo que hace cualquier sistema de facturación—. Comprobado sobre 25
+  comprobantes: 0 descuadres.
+- **Las anuladas no se restan: se excluyen.** En el cierre del mes, ponerles un
+  menos delante dejaba la columna sin cuadrar. Las notas de crédito sí suman, en
+  negativo, porque revierten venta.
+
+## La primera pantalla cuando esto pase a producto
+
+**El croquis de daños.** La silueta del carro vista desde arriba, con zonas
+tocables para marcar rayones y golpes al recibirlo, guardada con la orden y de
+solo lectura después.
+
+De todo lo que se evaluó para el demo, es lo único que un mecánico reconocería
+como suyo antes de que nadie se lo explique — es el papel carbón que todo taller
+serio hace firmar— y responde la disputa que le cuesta plata: *«¿ese rayón ya
+venía?»*.
+
+No está en el demo porque no es un dibujo: es columna nueva en `ordenes`, captura
+táctil y siembra. Es funcionalidad de producto, y la línea del demo está entre
+leer y escribir.
+
 ## Trampas conocidas
+
+**El servidor local escribe en PRODUCCIÓN.** Desde que se publicó, `.env.local`
+tiene las credenciales de Turso, y `next dev` y `next start` lo leen. O sea que
+levantar el servidor en la laptop toca la demo publicada: mover una tarjeta aquí
+la mueve para el prospecto que la esté mirando. [db.ts](src/lib/db.ts) avisa por
+consola al arrancar. Para trabajar contra el archivo local, se vacía
+`TURSO_DATABASE_URL` en `.env.local`.
+
+Los scripts de terminal NO tienen esa trampa: `tsx` no carga `.env.local`, así
+que `npm run demo:sembrar` va al archivo local salvo que se exporten las
+variables a mano. Cuesta un rato darse cuenta de que la pantalla y el script
+están mirando bases distintas.
+
+**Borrar `data/allez.db` con el servidor vivo** lo deja leyendo el inodo borrado:
+sigue sirviendo datos viejos que ya no están en el archivo. Hay que reiniciarlo
+después de resembrar.
 
 **Nunca corras `npm run build` ni borres `.next` con `npm run dev` vivo.**
 Comparten el directorio `.next` y se corrompe el manifiesto de cliente: la app
