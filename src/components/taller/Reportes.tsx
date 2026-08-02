@@ -6,8 +6,20 @@ import type { Reportes as Datos } from '@/lib/consultas-reportes'
 
 export function Reportes({ d }: { d: Datos }) {
   const pico = Math.max(1, ...d.meses.map((m) => m.total))
+
+  // El promedio de los meses YA CERRADOS. El mes en curso se deja fuera: va a
+  // media altura porque acaba de empezar y arrastraría la línea hacia abajo.
+  // Sin ella hay que comparar doce alturas de memoria; con ella cada mes se lee
+  // de un vistazo como "de los buenos" o "de los flojos".
+  const cerrados = d.meses.filter((m) => !m.enCurso)
+  const promedio = cerrados.length
+    ? cerrados.reduce((a, m) => a + m.total, 0) / cerrados.length
+    : 0
   const mejorMes = d.meses.reduce((a, b) => (b.total > a.total ? b : a), d.meses[0])
-  const topServicio = Math.max(1, ...d.servicios.map((s) => s.veces))
+  // La barra mide PLATA, no veces. Antes medía veces mientras el número grande
+  // de al lado mostraba dinero: dos escalas distintas en el mismo renglón, y
+  // nadie las cruza. La pregunta es "lo que más hago, ¿es lo que más me deja?".
+  const topServicio = Math.max(1, ...d.servicios.map((s) => s.ingreso))
   const topMecanico = Math.max(1, ...d.mecanicos.map((m) => m.ingreso))
 
   return (
@@ -49,34 +61,65 @@ export function Reportes({ d }: { d: Datos }) {
             doce barras hacen desbordar la página entera hacia el costado. */}
         <div className="-mx-1 mt-6 overflow-x-auto px-1">
           <div
-            className="flex h-52 min-w-[520px] items-stretch gap-1.5 sm:min-w-0 sm:gap-2"
+            className="min-w-[520px] sm:min-w-0"
             role="img"
-            aria-label="Ingresos de los últimos doce meses"
+            aria-label={`Ingresos de los últimos doce meses. Promedio de los meses cerrados: ${dinero(Math.round(promedio))}`}
           >
-          {d.meses.map((m) => (
-            <div key={m.clave} className="group relative flex h-full flex-1 flex-col justify-end">
-              <span className="cifras mb-1 hidden text-center text-micro text-tinta-2 sm:block">
-                {Math.round(m.total / 100000) > 0 ? `${Math.round(m.total / 100000)}k` : ''}
-              </span>
-              <span
-                className={`block w-full rounded-t-[4px] transition-colors group-hover:bg-acento ${
-                  m.enCurso ? 'bg-accion/35' : 'bg-accion'
-                }`}
-                style={{ height: `${Math.max(2, (m.total / pico) * 100)}%` }}
-              />
-              <span
-                className={`mt-2 block text-center text-micro uppercase ${
-                  m.enCurso ? 'text-tinta-2' : 'text-tinta-3'
-                }`}
-              >
-                {m.etiqueta}
-              </span>
-              <span className="pointer-events-none absolute -top-1 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded bg-elevada px-2 py-1 text-micro text-tinta shadow-lg group-hover:block">
-                {m.nombre} · {dinero(m.total)}
-                {m.enCurso ? ' · en curso' : ''}
-              </span>
+            {/* Tres filas con el mismo `gap` y columnas `flex-1`: quedan
+                alineadas solas. Las cifras y los meses viven FUERA de la pista,
+                para que el 100 % de una barra y el punto donde cae la línea del
+                promedio midan exactamente lo mismo. Antes las etiquetas estaban
+                dentro y la línea habría caído en cualquier sitio. */}
+            <div className="flex gap-1.5 sm:gap-2">
+              {d.meses.map((m) => (
+                <span
+                  key={m.clave}
+                  className="cifras hidden flex-1 text-center text-micro text-tinta-2 sm:block"
+                >
+                  {Math.round(m.total / 100000) > 0 ? `${Math.round(m.total / 100000)}k` : ''}
+                </span>
+              ))}
             </div>
-            ))}
+
+            <div className="relative mt-1 flex h-44 items-end gap-1.5 sm:gap-2">
+              {d.meses.map((m) => (
+                <div key={m.clave} className="group relative h-full flex-1">
+                  <span
+                    className={`absolute bottom-0 block w-full rounded-t-[4px] transition-colors group-hover:bg-acento ${
+                      m.enCurso ? 'bg-accion/35' : 'bg-accion'
+                    }`}
+                    style={{ height: `${Math.max(2, (m.total / pico) * 100)}%` }}
+                  />
+                  <span className="pointer-events-none absolute -top-1 left-1/2 z-20 hidden -translate-x-1/2 whitespace-nowrap rounded bg-elevada px-2 py-1 text-micro text-tinta shadow-lg group-hover:block">
+                    {m.nombre} · {dinero(m.total)}
+                  </span>
+                </div>
+              ))}
+
+              {promedio > 0 && (
+                <div
+                  className="pointer-events-none absolute inset-x-0 z-10 border-t border-dashed border-tinta-3"
+                  style={{ bottom: `${(promedio / pico) * 100}%` }}
+                >
+                  <span className="cifras absolute -top-[15px] right-0 rounded bg-fondo px-1 text-micro text-tinta-3">
+                    promedio {dinero(Math.round(promedio))}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-2 flex gap-1.5 sm:gap-2">
+              {d.meses.map((m) => (
+                <span
+                  key={m.clave}
+                  className={`flex-1 text-center text-micro uppercase ${
+                    m.enCurso ? 'text-tinta-2' : 'text-tinta-3'
+                  }`}
+                >
+                  {m.etiqueta}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -105,7 +148,7 @@ export function Reportes({ d }: { d: Datos }) {
                 <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-columna">
                   <div
                     className="h-full rounded-full bg-accion"
-                    style={{ width: `${Math.max(4, (s.veces / topServicio) * 100)}%` }}
+                    style={{ width: `${Math.max(4, (s.ingreso / topServicio) * 100)}%` }}
                   />
                 </div>
               </li>

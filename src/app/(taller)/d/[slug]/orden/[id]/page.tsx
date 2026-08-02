@@ -11,6 +11,7 @@ import { qrSvg } from '@/lib/qr'
 import { ordenDe } from '@/lib/consultas-taller'
 import { abrirDemo } from '@/lib/demos'
 import {
+  antiguedad,
   dinero,
   ESTADO_INFO,
   fechaCorta,
@@ -181,8 +182,16 @@ export default async function PaginaOrden({
               <span className="cifras font-titulo text-cifra text-tinta">{dinero(total)}</span>
             </div>
             {propuesto > 0 && (
-              <div className="flex items-baseline justify-between border-t border-borde px-5 py-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-t border-borde px-5 py-3">
                 <span className="text-etiqueta font-semibold uppercase text-media">Por aprobar</span>
+                {/* Cuánto lleva esperando. Es el número que decide si hay que
+                    levantar el teléfono, porque eso es dinero parado. El dato ya
+                    estaba en la base y esta pantalla no lo usaba. */}
+                {orden.presupuestoEnviadoEn && (
+                  <span className="cifras order-3 w-full text-meta text-tinta-3 sm:order-none sm:w-auto sm:flex-1">
+                    enviado hace {antiguedad(orden.presupuestoEnviadoEn)}
+                  </span>
+                )}
                 <span className="cifras font-titulo text-total text-media">{dinero(propuesto)}</span>
               </div>
             )}

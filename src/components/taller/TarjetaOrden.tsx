@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { Placa } from '@/components/Placa'
+import { DiscoPintura } from '@/components/taller/DiscoPintura'
 import { dinero, ESTADOS, ESTADO_INFO, PRIORIDAD_INFO, type Estado } from '@/lib/dominio'
 import type { Tarjeta } from '@/lib/consultas-taller'
 
@@ -71,7 +72,12 @@ export function TarjetaOrden({
         </div>
 
         <Link href={href} draggable={false} className="mt-2.5 block w-full text-left">
-          <p className="truncate text-meta text-tinta-2">{t.vehiculo}</p>
+          {/* El disco de pintura va aquí, dentro de la línea del vehículo: es el
+              atajo para encontrar "el plateado" entre doce tarjetas sin leer. */}
+          <p className="flex items-center truncate text-meta text-tinta-2">
+            <DiscoPintura color={t.color} />
+            <span className="truncate">{t.vehiculo}</span>
+          </p>
 
           <p className="mt-2 text-cuerpo font-semibold leading-[19px] text-tinta">
             <span className="cifras text-tinta-3">#0{t.numero}</span> {t.servicio}
@@ -91,9 +97,12 @@ export function TarjetaOrden({
                   No autorizado
                 </span>
               )}
+              {/* El NÚMERO, no la palabra. "Facturada" no se puede dictar por
+                  teléfono; 001-001-000000123 sí, y es lo que pide el contador
+                  cuando llama. El verde sigue significando lo mismo. */}
               {t.facturada && (
-                <span className="rounded-md bg-[#22C55E1F] px-2 py-1 text-micro font-semibold uppercase text-aprobado">
-                  Facturada
+                <span className="cifras rounded-md bg-[#22C55E1F] px-2 py-1 text-micro font-semibold text-aprobado">
+                  {t.numeroFactura ?? 'FACTURADA'}
                 </span>
               )}
             </div>

@@ -17,6 +17,39 @@ import type { Repuesto } from '@/lib/consultas-decorativas'
 // Con JavaScript nada de eso navega —se abre en el sitio y se guarda con fetch—,
 // pero si el guion no llega a correr la pantalla sigue sirviendo.
 
+/**
+ * Las existencias, como barra, con una marca vertical en el mínimo.
+ *
+ * La escala llega al doble del mínimo: por encima de eso da igual cuánto haya,
+ * lo único que se pregunta es si falta. Un repuesto sin mínimo —el prospecto
+ * puede dejar el campo vacío al darlo de alta— no tiene nada que comparar, así
+ * que no se dibuja nada en vez de dibujar una barra que miente.
+ */
+function BarraExistencias({ stock, minimo }: { stock: number; minimo: number }) {
+  if (minimo <= 0) return null
+
+  const escala = minimo * 2
+  const ancho = Math.min(100, (stock / escala) * 100)
+  const marca = (minimo / escala) * 100
+  const corto = stock < minimo
+
+  return (
+    <span
+      className="relative mt-1 block h-1 w-full overflow-hidden rounded-full bg-columna"
+      aria-hidden
+    >
+      <span
+        className={`absolute inset-y-0 left-0 rounded-full ${corto ? 'bg-media' : 'bg-accion'}`}
+        style={{ width: `${Math.max(3, ancho)}%` }}
+      />
+      <span
+        className="absolute inset-y-0 w-px bg-tinta-2"
+        style={{ left: `${marca}%` }}
+      />
+    </span>
+  )
+}
+
 const CATEGORIAS = ['Filtros', 'Lubricantes', 'Frenos', 'Suspensión', 'Eléctrico', 'Motor', 'Otros']
 const MOTIVOS = ['Conteo físico', 'Compra a proveedor', 'Devolución', 'Merma o daño', 'Corrección']
 
@@ -179,13 +212,20 @@ export function Inventario({
                     <span className="cifras hidden text-right text-meta text-tinta-2 sm:block">
                       {r.ubicacion}
                     </span>
-                    <span
-                      className={`cifras text-right text-cuerpo font-semibold ${
-                        bajo ? 'text-media' : 'text-tinta-2'
-                      }`}
-                    >
-                      {r.stock}
-                      <span className="text-tinta-3"> / {r.stock_minimo}</span>
+                    {/* El número se queda; debajo va la barra con una marca en
+                        el mínimo. La pregunta es "¿qué se me está por acabar?",
+                        y hoy hay que restar catorce pares de números para
+                        contestarla. Con la marca, lo corto salta solo. */}
+                    <span className="text-right">
+                      <span
+                        className={`cifras block text-cuerpo font-semibold ${
+                          bajo ? 'text-media' : 'text-tinta-2'
+                        }`}
+                      >
+                        {r.stock}
+                        <span className="text-tinta-3"> / {r.stock_minimo}</span>
+                      </span>
+                      <BarraExistencias stock={r.stock} minimo={r.stock_minimo} />
                     </span>
                     <span className="cifras hidden text-right text-cuerpo font-semibold text-tinta sm:block">
                       {dinero(r.precio)}

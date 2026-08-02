@@ -11,6 +11,8 @@ export type Tarjeta = {
   columna: number
   placa: string
   vehiculo: string
+  /** El color de la pintura, tal como se registró. Se pinta como disco. */
+  color: string
   cliente: string
   mecanico: string | null
   siglas: string | null
@@ -22,6 +24,8 @@ export type Tarjeta = {
   esperandoCliente: boolean
   noAutorizado: boolean
   facturada: boolean
+  /** El número del comprobante. Es lo que se dicta por teléfono. */
+  numeroFactura: string | null
   respondidoPor: string | null
   respondidoEn: string | null
 }
@@ -36,7 +40,7 @@ export async function tableroDe(demoId: string): Promise<Tarjeta[]> {
   const r = await filas<any>(
     `SELECT o.id, o.numero, o.estado, o.prioridad, o.orden_columna, o.creada_en, o.token_publico,
             o.respondido_por, o.respondido_en,
-            v.placa, v.marca, v.modelo, v.anio,
+            v.placa, v.marca, v.modelo, v.anio, v.color,
             c.nombre AS cliente, m.nombre AS mecanico,
             (SELECT i.descripcion FROM items i
               WHERE i.orden_id = o.id AND i.estado <> 'rechazado'
@@ -45,7 +49,8 @@ export async function tableroDe(demoId: string): Promise<Tarjeta[]> {
               WHERE i.orden_id = o.id AND i.estado <> 'rechazado' AND i.estado <> 'propuesto') AS total,
             (SELECT COUNT(*) FROM items i WHERE i.orden_id = o.id AND i.estado = 'propuesto') AS propuestos,
             (SELECT COUNT(*) FROM items i WHERE i.orden_id = o.id AND i.estado = 'rechazado') AS rechazados,
-            (SELECT COUNT(*) FROM facturas f WHERE f.orden_id = o.id) AS facturas
+            (SELECT COUNT(*) FROM facturas f WHERE f.orden_id = o.id) AS facturas,
+            (SELECT f.numero FROM facturas f WHERE f.orden_id = o.id) AS numero_factura
        FROM ordenes o
        JOIN vehiculos v ON v.id = o.vehiculo_id
        JOIN clientes c  ON c.id = o.cliente_id
@@ -66,7 +71,12 @@ export async function tableroDe(demoId: string): Promise<Tarjeta[]> {
     prioridad: o.prioridad,
     columna: o.orden_columna,
     placa: o.placa,
-    vehiculo: `${o.marca} ${o.modelo} · ${o.anio}`,
+    // El color va en la línea del vehículo: "el plateado" es como el jefe de
+    // taller nombra el carro en voz alta. Va AL FINAL a propósito — con un
+    // modelo largo la línea se corta, y lo que debe perderse es la palabra, que
+    // el disco ya dice, no el año.
+    vehiculo: `${o.marca} ${o.modelo} · ${o.anio} · ${o.color}`,
+    color: o.color,
     cliente: o.cliente,
     mecanico: o.mecanico ?? null,
     siglas: o.mecanico ? iniciales(o.mecanico) : null,
@@ -77,6 +87,7 @@ export async function tableroDe(demoId: string): Promise<Tarjeta[]> {
     esperandoCliente: o.propuestos > 0,
     noAutorizado: o.propuestos === 0 && o.rechazados > 0,
     facturada: o.facturas > 0,
+    numeroFactura: o.numero_factura ?? null,
     respondidoPor: o.respondido_por ?? null,
     respondidoEn: o.respondido_en ?? null,
   }))
@@ -285,7 +296,8 @@ export async function buscarPlaca(
                      WHERE i.orden_id = o.id AND i.estado <> 'rechazado') AS servicios,
                    (SELECT COALESCE(SUM(i.precio), 0) FROM items i
                      WHERE i.orden_id = o.id AND i.estado <> 'rechazado' AND i.estado <> 'propuesto') AS total,
-                   (SELECT COUNT(*) FROM facturas f WHERE f.orden_id = o.id) AS facturas
+                   (SELECT COUNT(*) FROM facturas f WHERE f.orden_id = o.id) AS facturas,
+            (SELECT f.numero FROM facturas f WHERE f.orden_id = o.id) AS numero_factura
               FROM ordenes o
              WHERE o.demo_id = ? AND o.vehiculo_id = ? AND o.archivada = 1
              ORDER BY o.creada_en DESC LIMIT 6`,
