@@ -9,3 +9,4 @@ data/*.db-*
 .netlify
 next-env.d.ts
 tsconfig.tsbuildinfo
+.env.turso

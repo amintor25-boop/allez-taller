@@ -321,19 +321,47 @@ No está en el demo porque no es un dibujo: es columna nueva en `ordenes`, captu
 táctil y siembra. Es funcionalidad de producto, y la línea del demo está entre
 leer y escribir.
 
+## Local y producción están separados a propósito
+
+| Archivo | Qué tiene | Quién lo lee |
+|---|---|---|
+| `.env.local` | la base local, `data/allez.db` | Next (`dev` y `start`) y los scripts, siempre |
+| `.env.turso` | las credenciales de producción | **nadie**, salvo que se pidan a mano |
+
+Todo va contra el archivo local por defecto. Para tocar producción hace falta un
+acto deliberado:
+
+```bash
+npm run turso demo:invariantes
+npm run turso demo:sembrar
+```
+
+`npm run turso` carga `.env.turso`, pone `PERMITIR_PRODUCCION=1` y avisa en
+pantalla contra qué base va a trabajar.
+
+**Y si alguien lo intenta sin eso, no arranca.** [db.ts](src/lib/db.ts) revienta
+con un mensaje explícito. Un aviso por consola no bastaba: se pierde entre
+cincuenta líneas de arranque.
+
+Esto no es celo. Con las credenciales en `.env.local` —que es donde estuvieron
+hasta que se separó—, un `npm run dev` en la laptop escribía en la demo
+publicada: **movía las tarjetas del prospecto que estuviera revisando su enlace
+en ese momento**, en vivo y sin que ninguno de los dos se enterara. Es exactamente
+el escenario del modo revisión.
+
+Y hay un segundo motivo, más aburrido y también caro: el servidor leía
+`.env.local` y los scripts no, así que la pantalla y la terminal mostraban bases
+distintas. Depurar eso costó una tarde. Ahora leen lo mismo — los scripts van con
+`tsx --env-file-if-exists=.env.local`.
+
+En la parte de abajo de cada pantalla, en desarrollo, hay una línea que dice
+contra qué base está corriendo. Si por lo que sea acaba siendo la remota, la
+línea se pone ámbar y lo dice con todas las letras. En Netlify no se pinta.
+
+Al publicar, las credenciales salen de las variables del sitio, no de ningún
+archivo.
+
 ## Trampas conocidas
-
-**El servidor local escribe en PRODUCCIÓN.** Desde que se publicó, `.env.local`
-tiene las credenciales de Turso, y `next dev` y `next start` lo leen. O sea que
-levantar el servidor en la laptop toca la demo publicada: mover una tarjeta aquí
-la mueve para el prospecto que la esté mirando. [db.ts](src/lib/db.ts) avisa por
-consola al arrancar. Para trabajar contra el archivo local, se vacía
-`TURSO_DATABASE_URL` en `.env.local`.
-
-Los scripts de terminal NO tienen esa trampa: `tsx` no carga `.env.local`, así
-que `npm run demo:sembrar` va al archivo local salvo que se exporten las
-variables a mano. Cuesta un rato darse cuenta de que la pantalla y el script
-están mirando bases distintas.
 
 **Borrar `data/allez.db` con el servidor vivo** lo deja leyendo el inodo borrado:
 sigue sirviendo datos viejos que ya no están en el archivo. Hay que reiniciarlo

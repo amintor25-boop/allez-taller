@@ -6,7 +6,7 @@
 //
 //   node scripts/publicar.mjs
 //
-// Lee TURSO_DATABASE_URL y TURSO_AUTH_TOKEN de .env.local. Nunca los imprime.
+// Lee TURSO_DATABASE_URL y TURSO_AUTH_TOKEN de .env.turso. Nunca los imprime.
 
 import { execFileSync, execSync } from 'node:child_process'
 import { readFileSync, existsSync } from 'node:fs'
@@ -15,9 +15,9 @@ const NOMBRE = process.env.SITIO ?? 'allez-taller'
 const EQUIPO = process.env.EQUIPO ?? 'amintor25'
 
 function leerEnvLocal() {
-  if (!existsSync('.env.local')) return {}
+  if (!existsSync('.env.turso')) return {}
   const out = {}
-  for (const linea of readFileSync('.env.local', 'utf8').split('\n')) {
+  for (const linea of readFileSync('.env.turso', 'utf8').split('\n')) {
     const m = linea.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)$/)
     if (m) out[m[1]] = m[2].trim().replace(/^["']|["']$/g, '')
   }
@@ -41,10 +41,10 @@ const conNetlify = { ...process.env, ...(env.NETLIFY_AUTH_TOKEN ? { NETLIFY_AUTH
 paso(0, 'Comprobando lo que hace falta')
 
 if (!URL_BD || !/^libsql:\/\//.test(URL_BD)) {
-  mal('Falta TURSO_DATABASE_URL en .env.local (tiene que empezar por libsql://)')
+  mal('Falta TURSO_DATABASE_URL en .env.turso (tiene que empezar por libsql://)')
 }
 if (!TOKEN_BD || TOKEN_BD.length < 20) {
-  mal('Falta TURSO_AUTH_TOKEN en .env.local')
+  mal('Falta TURSO_AUTH_TOKEN en .env.turso')
 }
 ok(`Turso: ${URL_BD.replace(/\/\/[^.]+/, '//****')}`)
 

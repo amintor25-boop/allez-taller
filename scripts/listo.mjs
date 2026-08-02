@@ -9,12 +9,12 @@ import { execSync } from 'node:child_process'
 import { readFileSync, existsSync } from 'node:fs'
 
 function envLocal() {
-  if (!existsSync('.env.local')) return {}
+  if (!existsSync('.env.turso')) return {}
   const out = {}
   // Se parte por líneas ANTES de aplicar la expresión: `\s` incluye el salto de
   // línea, así que un `(.*)$` sobre el archivo entero se traga la línea
   // siguiente y devuelve el nombre de la variable de abajo como si fuera valor.
-  for (const linea of readFileSync('.env.local', 'utf8').split('\n')) {
+  for (const linea of readFileSync('.env.turso', 'utf8').split('\n')) {
     const m = linea.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)$/)
     if (m) out[m[1]] = m[2].trim().replace(/^["']|["']$/g, '')
   }
@@ -29,7 +29,7 @@ const urlOk = /^libsql:\/\/.+\..+/.test(url)
 const tokenOk = token.length >= 20
 
 // Dos formas válidas de tener sesión: `netlify login`, o un token personal en
-// .env.local. La segunda evita que el token pase por ningún sitio compartido.
+// .env.turso. La segunda evita que el token pase por ningún sitio compartido.
 const tokenNetlify = env.NETLIFY_AUTH_TOKEN ?? ''
 let netlify = ''
 try {

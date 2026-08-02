@@ -1,5 +1,6 @@
 import { Cabecera } from '@/components/taller/Cabecera'
 import { Preparando } from '@/components/taller/Preparando'
+import { FranjaBase } from '@/components/taller/FranjaBase'
 import { fila } from '@/lib/db'
 import { abrirDemo, estaListo } from '@/lib/demos'
 
@@ -45,6 +46,7 @@ export default async function LayoutDemo({
         enTaller={enTaller?.n ?? 0}
       />
       {children}
+      <FranjaBase />
     </div>
   )
 }
