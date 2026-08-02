@@ -133,47 +133,48 @@ que se carga en producción es `@libsql/client/web`, JavaScript puro, para que e
 paquete de la función no arrastre binarios nativos —eso lo resuelve
 [db.ts](src/lib/db.ts) mirando si la URL empieza por `libsql:` o `https:`.
 
-### 1. Lo único que hay que hacer a mano
+> **Ya está publicado en https://allez-taller.netlify.app**, con despliegue
+> continuo desde `github.com/amintor25-boop/allez-taller`. Cada `git push` a
+> `main` publica solo. Lo de abajo es cómo se montó, y por qué de esta forma.
 
-Son dos cosas, y las dos son credenciales: no pueden salir de un guion.
+### 1. Compila NETLIFY, no tu Mac
 
-**a) Turso.** Entrar a [turso.tech](https://turso.tech), crear la cuenta y una
-base llamada `allez-taller`. En su pantalla salen dos datos: la **URL** y un
-**token**. Se pegan en `.env.local` —nunca en un chat, nunca en el repositorio;
-`.env.local` está en el `.gitignore`:
+Esto no es una preferencia: es la única forma que funciona.
 
-```
-TURSO_DATABASE_URL=libsql://allez-taller-tuusuario.turso.io
-TURSO_AUTH_TOKEN=…
-```
+Se intentó primero el camino corto, `netlify deploy --prod --build`, que compila
+en local y sube el resultado. Falló dos veces y por dos motivos distintos:
 
-**b) Netlify.** En una terminal, dentro de esta carpeta:
+**Binarios de la máquina equivocada.** Dentro del paquete de la función viajaron
+`@libsql/darwin-arm64/index.node` (7,8 MB) y `@img/sharp-darwin-arm64`. Al
+cargarlos, Linux mata el proceso: la función respondía 502 con
+`error decoding lambda response: invalid character '\x00'`. Ni
+`serverExternalPackages` ni `external_node_modules` lo evitan — el adaptador usa
+`bundler: "none"` y copia `node_modules` entero, así que «externo» quiere decir
+«no lo empaquetes, cópialo», y copió los binarios de Apple Silicon.
 
-```bash
-npx netlify login
-```
+**Y aunque se quiten, el enrutado tampoco monta.** La función declara
+`routes: [{pattern: "/*"}]`, pero ese contrato de *función interna del framework*
+solo lo arma Netlify al compilar. Con `--build` la función ni siquiera se sube
+(`funciones: []`); forzándola con `--functions` sube, pero como función de
+usuario y nadie la llama.
 
-Se abre el navegador y se autoriza. La CLI guarda la sesión y ya no vuelve a
-pedir nada.
+Compilando en Netlify —Ubuntu, `npm ci` allí— los dos problemas desaparecen de
+raíz.
 
-### 2. Todo lo demás, de un comando
+### 2. Cómo se conectó
 
-```bash
-npm run publicar
-```
+1. Repositorio en GitHub, privado. El `.gitignore` ya deja fuera `.env.local`,
+   `.netlify`, `node_modules` y `data/*.db`.
+2. En el panel del sitio → **Continuous deployment** → **Link repository** →
+   GitHub → autorizar solo este repositorio.
+3. Ajustes: **build command** `npm run build`, **publish directory** `.next`.
 
-Hace, en este orden, y se para en el primer fallo:
-
-1. comprueba que están las credenciales y la sesión,
-2. siembra Turso —3.226 sentencias, 9 viajes— desde tu máquina, sin límite de tiempo,
-3. crea el sitio `allez-taller` y enlaza la carpeta,
-4. pone las tres variables de entorno (la cuarta se deja vacía a propósito),
-5. compila y despliega,
-6. comprueba cinco rutas del sitio publicado y cronometra cada una.
-
-Con otro nombre de sitio: `SITIO=taller-mito npm run publicar`.
+Ese último paso pide autorizar la aplicación de GitHub en el navegador; no se
+puede hacer por API.
 
 ### 3. Las variables
+
+En **Site configuration → Environment variables**:
 
 | Variable | De dónde sale |
 |---|---|
@@ -184,20 +185,30 @@ Con otro nombre de sitio: `SITIO=taller-mito npm run publicar`.
 
 `NEXT_PUBLIC_BASE_URL` es la que decide a dónde apunta el QR, y
 [base-url.ts](src/lib/base-url.ts) la resuelve sola desde la cabecera de la
-petición: el QR sale con el mismo dominio por el que abriste el tablero. Ponerla
-a mano tiene dos trampas — las variables `NEXT_PUBLIC_` se congelan al compilar,
-así que cambiarla obliga a volver a desplegar; y si se escribe mal, el QR se ve
-perfecto y no lleva a ninguna parte. Eso se descubre con el prospecto delante.
+petición. Ponerla a mano tiene dos trampas: las `NEXT_PUBLIC_` se congelan al
+compilar, así que cambiarla obliga a volver a desplegar; y si se escribe mal, el
+QR se ve perfecto y no lleva a ninguna parte. Eso se descubre con el prospecto
+delante.
 
-### 4. Comprobar el despliegue
+La base se siembra **desde la terminal**, una vez:
 
 ```bash
-curl -s https://TU-DOMINIO/salud | grep -o Conectado
-curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" https://TU-DOMINIO/d/san-rafael
+npm run demo:sembrar     # con TURSO_* en .env.local
 ```
 
-Y con un teléfono fuera del wifi: abrir el tablero, mandar un presupuesto,
-escanear el QR y aprobar. Es el único ensayo que prueba lo que importa.
+### 4. Medido en producción
+
+```
+nueve pantallas            200, la más lenta 0,73 s
+camino de oro completo     8 pasos, el más lento 0,53 s
+reinicio de las 48 h       1,12 s  ← con la siembra entera habría sido inviable
+sembrar contra Turso       7,18 s desde la laptop
+latencia por viaje de red  735 ms hasta aws-us-east-2
+```
+
+Falta un solo ensayo, y ese no lo hace ningún comando: **con un teléfono fuera
+del wifi**, abrir el tablero, mandar un presupuesto, escanear el QR y aprobar.
+Si la tarjeta viaja sola, está listo.
 
 ### Por qué esto no se cae contra Turso
 
