@@ -11,7 +11,7 @@ import {
   semillaDe,
 } from './datos-semilla'
 import { ESTADOS, centavos, desglosarIva, token } from './dominio'
-import { claveDeAcceso, numeroFactura } from './sri'
+import { claveDeAcceso, numeroFactura, TIPO_FACTURA, TIPO_NOTA_CREDITO } from './sri'
 
 export type Demo = {
   id: string
@@ -307,7 +307,12 @@ async function sembrarDeVerdad(demo: Pick<Demo, 'id' | 'taller_nombre'> & { slug
       args: [
         `${ordenId}-f`, demoId, ordenId,
         numeroFactura(secuencial),
-        claveDeAcceso({ fechaIso: salio, ruc: rucFicticio(demo.slug ?? ''), secuencial }),
+        claveDeAcceso({
+          fechaIso: salio,
+          ruc: rucFicticio(demo.slug ?? ''),
+          secuencial,
+          tipo: v.estadoFactura === 'nota_credito' ? TIPO_NOTA_CREDITO : TIPO_FACTURA,
+        }),
         subtotal * signo, iva * signo, total * signo, v.estadoFactura, salio,
       ],
     })

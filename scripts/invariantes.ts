@@ -111,6 +111,51 @@ async function main() {
     )
     comprueba('sin instantes de ingreso repetidos', Number(repetidos?.n) === 0, `${repetidos?.n} instantes con más de una orden`)
 
+    // ── 10. Ni una factura en domingo ───────────────────────────────────────
+    //
+    // El taller no abre. El domingo se esquivaba al elegir la ENTRADA pero la
+    // factura se emite a la SALIDA: salían 95 comprobantes dominicales, más que
+    // un lunes. No se veía en ninguna pantalla, pero es falso igual.
+    const domingos = await fila<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM facturas
+        WHERE demo_id = ? AND strftime('%w', datetime(emitida_en, '-5 hours')) = '0'`,
+      [d],
+    )
+    comprueba('ninguna factura emitida en domingo', Number(domingos?.n) === 0, `${domingos?.n}`)
+
+    // ── 11. Cada comprobante lleva su tipo en la clave de acceso ────────────
+    //
+    // Una nota de crédito no es una factura: va con el 04, no con el 01. Los
+    // dígitos 9 y 10 de los 49 son el tipo de comprobante.
+    const tipoMal = await fila<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM facturas
+        WHERE demo_id = ?
+          AND substr(clave_acceso, 9, 2) <> CASE WHEN estado = 'nota_credito' THEN '04' ELSE '01' END`,
+      [d],
+    )
+    comprueba('el tipo de comprobante de la clave coincide con el estado', Number(tipoMal?.n) === 0, `${tipoMal?.n} mal`)
+
+    // ── 12. Los tres mecánicos tienen perfiles distintos ────────────────────
+    //
+    // Si los tres facturan casi lo mismo, el bloque de productividad responde
+    // "los tres igual" y no demuestra nada. El que más carros mueve NO debería
+    // ser el que más factura: ahí está la gracia del informe.
+    const mec = await filas<{ nombre: string; carros: number; plata: number }>(
+      `SELECT m.nombre, COUNT(DISTINCT o.id) AS carros, COALESCE(SUM(f.total), 0) AS plata
+         FROM ordenes o JOIN mecanicos m ON m.id = o.mecanico_id
+         LEFT JOIN facturas f ON f.orden_id = o.id
+        WHERE o.demo_id = ? AND o.archivada = 1
+        GROUP BY m.nombre`,
+      [d],
+    )
+    const porPlata = [...mec].sort((a, b) => Number(b.plata) - Number(a.plata))
+    const porCarros = [...mec].sort((a, b) => Number(b.carros) - Number(a.carros))
+    comprueba(
+      'el que más carros mueve no es el que más factura',
+      mec.length === 3 && porPlata[0].nombre !== porCarros[0].nombre,
+      mec.length === 3 ? `${porCarros[0].nombre} mueve más · ${porPlata[0].nombre} factura más` : '',
+    )
+
     // ── 9. El tablero tiene las doce de siempre ─────────────────────────────
     const abiertas = await fila<{ n: number }>(
       `SELECT COUNT(*) AS n FROM ordenes WHERE demo_id = ? AND archivada = 0`,

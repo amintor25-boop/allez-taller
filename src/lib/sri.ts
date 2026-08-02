@@ -8,6 +8,13 @@
 //   serie (6) · secuencial (9) · código numérico (8) · tipo emisión (1) · verificador (1)
 
 export const TIPO_FACTURA = '01'
+/**
+ * Una nota de crédito NO es una factura: lleva su propio tipo de comprobante en
+ * la clave de acceso. Emitir una con el 01 es un error de corrección, no de
+ * diseño, y es de los que se pagan caro: el día que un prospecto le pase el
+ * enlace a su contador, va a haber alguien leyendo esos 49 dígitos uno por uno.
+ */
+export const TIPO_NOTA_CREDITO = '04'
 export const AMBIENTE_PRUEBAS = '1'
 export const EMISION_NORMAL = '1'
 export const ESTABLECIMIENTO = '001'
@@ -50,11 +57,13 @@ export function claveDeAcceso(opciones: {
   fechaIso: string
   ruc: string
   secuencial: number
+  /** '01' factura (por defecto) · '04' nota de crédito. */
+  tipo?: string
 }): string {
-  const { fechaIso, ruc, secuencial } = opciones
+  const { fechaIso, ruc, secuencial, tipo = TIPO_FACTURA } = opciones
   const cuerpo =
     fechaClave(fechaIso) +
-    TIPO_FACTURA +
+    tipo +
     ruc.padStart(13, '0') +
     AMBIENTE_PRUEBAS +
     ESTABLECIMIENTO +

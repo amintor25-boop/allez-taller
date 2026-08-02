@@ -9,6 +9,31 @@ export const MECANICOS = [
   { nombre: 'Édison Guamán', especialidad: 'Electricidad y A/C' },
 ]
 
+/**
+ * Tres maneras distintas de trabajar, y por eso tres respuestas distintas a la
+ * pregunta que le importa al dueño: "¿cuál de mis mecánicos me da plata?".
+ *
+ * Antes el reparto era un azar uniforme y los tres salían iguales —210, 208 y
+ * 204 carros; 38, 36 y 34 mil dólares—. El bloque de productividad respondía
+ * "los tres igual", que es la respuesta menos interesante posible y la que menos
+ * demuestra para qué sirve el sistema.
+ *
+ * `pesoBarato` es la inclinación por trabajos de menos de 60 dólares; el resto
+ * de la escala reparte los caros. Con eso salen tres perfiles reconocibles en
+ * cualquier taller: el que despacha mucho y barato, el que hace pocos trabajos
+ * grandes, y el intermedio.
+ */
+export const PERFILES = [
+  // Jorge — motor y diagnóstico. Los trabajos grandes. Pocos carros, ticket alto.
+  { chico: 0.15, medio: 0.7, grande: 3.2, volumen: 0.75 },
+  // Wilmer — frenos y suspensión. El que MÁS carros mueve y el que MENOS factura:
+  // muchos aceites, alineaciones y diagnósticos.
+  { chico: 3.2, medio: 1.1, grande: 0.5, volumen: 1.55 },
+  // Édison — electricidad y A/C. En medio, y por eso la respuesta a "¿cuál me da
+  // plata?" no es la obvia: no es el que más carros atiende.
+  { chico: 1.0, medio: 2.0, grande: 1.0, volumen: 1.0 },
+]
+
 export type SemillaVehiculo = {
   placa: string
   marca: string
@@ -326,6 +351,34 @@ export function azar(semilla: number) {
   }
 }
 
+/**
+ * A quién le toca el trabajo, según lo que cuesta.
+ *
+ * No es un sorteo plano: cada mecánico tira más de un tipo de trabajo. Un
+ * trabajo barato pesa por `pesoBarato`, uno caro por lo contrario, y el
+ * `volumen` inclina cuántos carros pasan por cada uno.
+ */
+function elegirMecanico(r: () => number, mayorTrabajo: number): number {
+  // La banda mira el trabajo MÁS GRANDE de la visita, no la suma: con la suma,
+  // casi ninguna visita bajaba de 60 —van de uno a tres servicios— y los tres
+  // perfiles volvían a parecerse. Y con dos bandas el de los trabajos grandes
+  // acababa primero en carros Y en plata, que es la historia aburrida.
+  const banda = mayorTrabajo >= 150 ? 'grande' : mayorTrabajo >= 60 ? 'medio' : 'chico'
+  const pesos = PERFILES.map((p) => p[banda] * p.volumen)
+  const total = pesos.reduce((a, b) => a + b, 0)
+  let corte = r() * total
+  for (let i = 0; i < pesos.length; i++) {
+    corte -= pesos[i]
+    if (corte <= 0) return i
+  }
+  return pesos.length - 1
+}
+
+/** Un instante visto con el reloj de Ecuador, que es UTC-5 fijo todo el año. */
+function enEcuador(d: Date): Date {
+  return new Date(d.getTime() - 5 * 3_600_000)
+}
+
 export function semillaDe(texto: string): number {
   let h = 2166136261
   for (const c of texto) h = Math.imul(h ^ c.charCodeAt(0), 16777619)
@@ -377,13 +430,31 @@ export function generarHistorial(semilla: number): VisitaGenerada[] {
       const entro = new Date(
         Date.UTC(anio, mes, dia, 13 + Math.floor(r() * 4), Math.floor(r() * 60), Math.floor(r() * 60)),
       ) // 08–11 en Ecuador
+      // Los días que el carro pasa adentro son días LABORABLES: el taller no
+      // abre en domingo, así que un carro que entra el viernes y necesita dos
+      // días sale el martes. Modelarlo así es lo único que da cero facturas
+      // dominicales sin amontonarlas en otro día.
       const enTaller = Math.max(0, Math.round(horas / 4 + r() * 1.6))
-      let salio = new Date(entro.getTime() + enTaller * 86_400_000 + (4 + r() * 5) * 3_600_000)
+      let salio = new Date(entro.getTime())
+      for (let dia = 0; dia < enTaller; dia++) {
+        salio = new Date(salio.getTime() + 86_400_000)
+        if (enEcuador(salio).getUTCDay() === 0) salio = new Date(salio.getTime() + 86_400_000)
+      }
+      salio = new Date(salio.getTime() + (4 + r() * 5) * 3_600_000)
+      // Sumar las horas puede empujar la entrega al domingo por la madrugada.
+      if (enEcuador(salio).getUTCDay() === 0) salio = new Date(salio.getTime() + 26 * 3_600_000)
 
       // Si la entrega cae en el futuro se retrocede una cantidad distinta cada
       // vez: recortarlas todas contra "ahora" dejaba media docena de facturas
       // con el mismo minuto, y eso se ve inventado a la primera mirada.
-      if (salio > hoy) salio = new Date(hoy.getTime() - (1 + r() * 9) * 3_600_000)
+      // Si la entrega cae en el futuro se retrocede, y si al retroceder cae en
+      // domingo se retrocede un día más. El domingo se esquivaba al elegir la
+      // ENTRADA pero no al calcular la SALIDA, y la factura se emite a la salida:
+      // salían 95 comprobantes dominicales, más que un lunes.
+      if (salio > hoy) {
+        salio = new Date(hoy.getTime() - (1 + r() * 9) * 3_600_000)
+        if (enEcuador(salio).getUTCDay() === 0) salio = new Date(salio.getTime() - 24 * 3_600_000)
+      }
 
       // EL CARRO SE ELIGE DESPUÉS DE SABER CUÁNDO SALIÓ, y solo entre los que no
       // estaban adentro en esa fecha.
@@ -420,7 +491,14 @@ export function generarHistorial(semilla: number): VisitaGenerada[] {
         entro: entro.toISOString(),
         salio: salio.toISOString(),
         km,
-        mecanico: Math.floor(r() * MECANICOS.length),
+        // Lo que va a costar la visita decide a quién le toca. Se calcula aquí
+        // igual que en la siembra: servicios más el hallazgo si lo aprobaron.
+        // Quién hace el trabajo lo decide el trabajo más grande de la visita,
+        // que es como se reparte en un taller de verdad.
+        mecanico: elegirMecanico(
+          r,
+          Math.max(...servicios.map((sv) => sv.precio), hallazgo?.aprobado ? hallazgo.precio : 0),
+        ),
         estadoFactura,
         servicios,
       })
