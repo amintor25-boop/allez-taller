@@ -1,0 +1,25 @@
+[build]
+  command = "npm run build"
+
+# OJO: NO se fija `publish`.
+#
+# El adaptador de Next.js decide dónde queda lo estático y dónde la función del
+# servidor. Con `publish = ".next"` puesto a mano, el toml generado salía con
+# `publishOrigin = "config"` —el nuestro ganaba— y el CDN servía `.next`, que no
+# tiene índice, mientras la función del manejador se empaquetaba pero no viajaba:
+# el despliegue subía con `functions: []` y TODAS las rutas daban 404.
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# La base es Turso por HTTP y el cliente que se carga es @libsql/client/web, que
+# es JavaScript puro. Sin esto el empaquetador intentaría meter el binario nativo
+# de libSQL en la función y reventaría al desplegar.
+[functions]
+  external_node_modules = ["@libsql/client"]
+
+# Nada de esto se indexa: son enlaces privados para prospectos.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
